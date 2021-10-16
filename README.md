@@ -6,7 +6,7 @@ simple python wrapper to run SNID
 
 # Installation
 
-Assuming you already have snid installed (see here)[https://people.lam.fr/blondin.stephane/software/snid/]
+Assuming you already have snid installed [see here](https://people.lam.fr/blondin.stephane/software/snid/)
 
 Simply `pip install pysnid`
 
