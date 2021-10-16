@@ -25,7 +25,7 @@ snidres.results
 ```
 
 <p align="left">
-  <img src="images/snidresults.png" width="550" title="results">
+  <img src="images/snidresults.png" width="400" title="results">
 </p>
 
 
