@@ -1,3 +1,6 @@
+[![PyPI](https://img.shields.io/pypi/v/pysnid.svg?style=flat-square)](https://pypi.python.org/pypi/pysnid)
+
+
 # pysnid
 simple python wrapper to run SNID
 
