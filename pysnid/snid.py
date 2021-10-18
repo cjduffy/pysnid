@@ -38,6 +38,35 @@ def run_snid(filename,
     return snidres
 
 
+def bulk_run_snid(filenames, client=None, as_dask="delayed", map_kwargs={}, **kwargs):
+    """ """
+    import dask
+    run_delayed = []
+    for i,filename in enumerate(filenames):
+        mkwargs = {k:v if not hasattr(v,"__iter__") else v[i] for k,v in kwargs.items()}
+        print(mkwargs)
+        run_delayed.append( dask.delayed(run_snid)(filename, **mkwargs))
+
+    # ------------ #
+    #   Dask Out   #
+    # ------------ #
+    if as_dask == "delayed":
+        return run_delayed
+    
+    if as_dask == "compute":
+        if client is None:
+            return dask.delayed(list)(run_delayed).compute()
+        return client.compute(run_delayed)
+    
+    if as_dask == "gather":
+        if client is None:
+            return dask.delayed(list)(run_delayed).compute()
+        return client.gather( client.compute(run_delayed) )
+    
+    raise ValueError(f"as_dask can only delayed, compute and gather: {as_dask} given")
+        
+    
+
 
 class SNIDReader( object ):
 
@@ -237,8 +266,12 @@ class SNIDReader( object ):
 
 class SNID( object ):
     """ """
-    def __init__(self,):
+    def __init__(self, id_=None):
         """ """
+        if id_ is None:
+            self._snidid = f"{np.random.randint(100000):06d}"
+        else:
+            self._snidid = f"{id_}"
         
     @staticmethod
     def build_snid_command(filename, 
@@ -249,13 +282,17 @@ class SNID( object ):
                             medlen=20, fwmed=None,
                             rlapmin=2, 
                             fluxout=10,
-                            skyclip=False, aband=False, inter=False, plot=False):
+                            skyclip=False, aband=False, inter=False, plot=False,
+                            param=None):
         """ """
         lbdamin, lbdamax = lbda_range
         agemin, agemax = phase_range
         zmin, zmax = redshift_range
         
-        cmd_snid  = f"snid " 
+        cmd_snid  = f"snid "
+        if param is not None:
+            cmd_snid += f"param={param} "
+            
         cmd_snid += f"wmin={int(lbdamin)} wmax={int(lbdamax)} "
         # Redshift
         if forcez is not None:
@@ -272,11 +309,14 @@ class SNID( object ):
             
         cmd_snid += f"fluxout={int(fluxout)} aband={int(aband)} rlapmin={int(rlapmin)} inter={int(inter)} plot={int(plot)} "
         cmd_snid += f"{filename}"
-
+        print(cmd_snid)
         return cmd_snid
     
-    def run(self, filename, fileout=None, dirout=None, tmpdir='tmp', cleanout=True, verbose=False,
-            quiet=False, **kwargs):
+    def run(self, filename, fileout=None,
+                dirout=None, tmpdir=None,
+                cleanout=True, verbose=False,
+                quiet=False, paramfile=None, in_tmpdir=True,
+                **kwargs):
         """ run SNID and store the result as a hdf5 file. 
         
         **kwargs goes to build_snid_command
@@ -296,13 +336,25 @@ class SNID( object ):
         dirname  = os.path.dirname(filename)        
         #
         # Create a symlink to bypass the SNID filepath limitation
-        self._tmpfile = self._build_tmpfile_(tmpdir=tmpdir)
+        
+        if tmpdir is None:
+            tmpdir = f"tmpsnid_{self._snidid}"
+        if not os.path.isdir(tmpdir):
+            os.makedirs(tmpdir, exist_ok=True)
+        if in_tmpdir:
+            old_pwd=os.getcwd()
+            os.chdir(tmpdir)
+            self._tmpfile = f"snid_{self._snidid}_spectofit.ascii"
+        else:
+            old_pwd = None
+            self._tmpfile = os.path.join(tmpdir, f"snid_{self._snidid}_spectofit.ascii")
+            
         os.symlink(filename, self._tmpfile)
-        
-        
+
         tmpbase = os.path.basename(self._tmpfile).split(".")[0]
         
-        snid_cmd = self.build_snid_command(self._tmpfile,**kwargs)
+        snid_cmd = self.build_snid_command(self._tmpfile, param=paramfile, **kwargs)
+        
         self._result = run(snid_cmd.split(), stdout=PIPE, stderr=PIPE, universal_newlines=True)
         if verbose:
             print(f" running: {snid_cmd}")
@@ -312,12 +364,19 @@ class SNID( object ):
             warnings.warn("SNID returncode is not 0, suggesting an error")
         elif "orrelation function is all zero!" in self._result.stdout:
             warnings.warn("SNID failed:  Searching all correlation peaks... PEAKFIT: Correlation function is all zero!")
+        elif "PEAKFIT: fit quits before half peak points!" in self._result.stdout:
+            warnings.warn("SNID failed:  Searching all correlation peaks... PEAKFIT: fit quits before half peak points!")
         else:
             datafile = f"{tmpbase}_snidflux.dat"
             modelfiles = glob(f"{tmpbase}_comp*_snidflux.dat")
             snidout = f"{tmpbase}_snid.output"
-            
-            result = SNIDReader._read_snidoutput_(snidout)
+            try:
+                result = SNIDReader._read_snidoutput_(snidout)
+            except FileNotFoundError:
+                print(" SNID RETURN CODE ".center(40,"-"))
+                print(self._result.stdout)
+                print("".center(40,"-"))
+                raise FileNotFoundError("cannot find the SNID output.")
             data = SNIDReader._read_snidflux_(datafile)
             models = {int(f_.split("comp")[-1].split("_")[0]):SNIDReader._read_snidflux_(f_) 
                       for i,f_ in enumerate(modelfiles)}
@@ -347,18 +406,22 @@ class SNID( object ):
         if cleanout:
             os.remove("snid.param")
             os.remove(self._tmpfile)
+            if old_pwd is not None:
+                os.chdir(old_pwd)
             shutil.rmtree(tmpdir)
-        
+
         return fileout
     
     # ============== #
     #  Internal      #
-    # ============== #
-    @staticmethod
-    def _build_tmpfile_(tmpdir="tmp", tmpstruct="snid_spectofit"):
+    # ============== #    
+    def _build_tmpfile_(self, tmpdir="tmp", tmpstruct="_default_"):
         """ """
         if not os.path.isdir(tmpdir):
             os.makedirs(tmpdir, exist_ok=True)
+            
+        if tmpstruct == "_default_":
+            tmpstruct = f"snid_{self._snidid}_spectofit"
             
         tmp_file = os.path.join(tmpdir, tmpstruct+".ascii")
         i=1
