@@ -183,11 +183,14 @@ class SNIDReader( object ):
     # --------- #
     #  GETTER   #
     # --------- #    
-    def show(self, models=[1], offset_coef=1):
+    def show(self, models=[1], offset_coef=1, ax=None, savefile=None):
         """ """
         import matplotlib.pyplot as mpl
-        fig = mpl.figure(figsize=[7,4])
-        ax = fig.add_axes([0.12,0.15,0.8,0.8])
+        if ax is None:
+            fig = mpl.figure(figsize=[7,4])
+            ax = fig.add_axes([0.12,0.15,0.8,0.8])
+        else:
+            fig = ax.figure
 
         propmodel = dict(lw=1)
         for i, model_ in enumerate(np.atleast_1d(models)):
@@ -217,6 +220,10 @@ class SNIDReader( object ):
         [ax.spines[which].set_visible(False) for which in clearwhich]
 
         ax.set_xlabel(r"Wavelength [$\AA$]", fontsize="large")
+        if savefile is not None:
+            fig.savefig(savefile)
+            
+        return fig
     # ============== #
     #  Internal      #
     # ============== #    
@@ -272,7 +279,7 @@ class SNID( object ):
     def __init__(self, id_=None):
         """ """
         if id_ is None:
-            self._snidid = f"{np.random.randint(100000):06d}"
+            self._snidid = f"{np.random.randint(1000000):08d}"
         else:
             self._snidid = f"{id_}"
         
