@@ -386,7 +386,7 @@ class SNID( object ):
                 print(" SNID RETURN CODE ".center(40,"-"))
                 print(self._result.stdout)
                 print("".center(40,"-"))
-                if cleanout: self._cleanup_run_(old_pwd=old_pwd)
+                if cleanout: self._cleanup_run_(tmpdir, old_pwd=old_pwd)
                 raise FileNotFoundError("cannot find the SNID output.")
 
             data = SNIDReader._read_snidflux_(datafile)
@@ -416,11 +416,12 @@ class SNID( object ):
                 
         # - cleanup
         if cleanout:
-            self._cleanup_run_(old_pwd=old_pwd)
+            self._cleanup_run_(tmpdir,
+                                   old_pwd=old_pwd)
 
         return fileout
 
-    def _cleanup_run_(self, old_pwd=None):
+    def _cleanup_run_(self, tmpdir, old_pwd=None):
         """ """
         os.remove("snid.param")
         os.remove(self._tmpfile)
