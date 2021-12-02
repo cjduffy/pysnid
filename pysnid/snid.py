@@ -11,7 +11,7 @@ import warnings
 def run_snid(filename, 
              phase=None, redshift=None, delta_phase=5, delta_redshift=None,
              lbda_range=[4000,8000], set_it=True,
-             verbose=False, quiet=True, **kwargs):
+             verbose=False, quiet=True, get_results=True, **kwargs):
     """ """
     snid_prop = dict(quiet=quiet, lbda_range=lbda_range, verbose=verbose)
 
@@ -34,8 +34,11 @@ def run_snid(filename,
         warnings.warn("SNID fit failed. Nothing returned")
         return None
 
-    snidres = SNIDReader.from_filename(outfile)
-    return snidres
+    if get_results:        
+        snidres = SNIDReader.from_filename(outfile)
+        return snidres
+    
+    return outfile
 
 
 def bulk_run_snid(filenames, client=None, as_dask="delayed", map_kwargs={}, **kwargs):
