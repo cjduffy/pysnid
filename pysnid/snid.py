@@ -386,7 +386,9 @@ class SNID( object ):
                 print(" SNID RETURN CODE ".center(40,"-"))
                 print(self._result.stdout)
                 print("".center(40,"-"))
+                if cleanout: self._cleanup_run_(old_pwd=old_pwd)
                 raise FileNotFoundError("cannot find the SNID output.")
+
             data = SNIDReader._read_snidflux_(datafile)
             models = {int(f_.split("comp")[-1].split("_")[0]):SNIDReader._read_snidflux_(f_) 
                       for i,f_ in enumerate(modelfiles)}
@@ -414,14 +416,18 @@ class SNID( object ):
                 
         # - cleanup
         if cleanout:
-            os.remove("snid.param")
-            os.remove(self._tmpfile)
-            if old_pwd is not None:
-                os.chdir(old_pwd)
-            shutil.rmtree(tmpdir)
+            self._cleanup_run_(old_pwd=old_pwd)
 
         return fileout
-    
+
+    def _cleanup_run_(self, old_pwd=None):
+        """ """
+        os.remove("snid.param")
+        os.remove(self._tmpfile)
+        if old_pwd is not None:
+            os.chdir(old_pwd)
+            
+        shutil.rmtree(tmpdir)
     # ============== #
     #  Internal      #
     # ============== #    
