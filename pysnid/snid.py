@@ -100,7 +100,12 @@ class SNIDReader( object ):
         if "/models" in filekeys:
             this.set_models( hdata.get( "models" ) )
         else:
-            warnings.warn(f"not a single 'comp' stored in the input filename {filename}")
+            comps = [l for l in filekeys if "comp" in l]
+            if len(comps)>0:
+                warnings.warn("Important: Deprecation - the old '_snid.h5' format with individual 'comp file' stored will not be supported at the next upgrade. Rebuild your file.")
+                this.set_models(pandas.concat({int(comp.split("comp")[-1]): hdata.get( comp ) for comp in comps}))
+            else:
+                warnings.warn(f"not a single 'comp' stored in the input filename {filename}")
 
         this._filename = filename
         return this
