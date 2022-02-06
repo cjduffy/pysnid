@@ -47,7 +47,6 @@ def bulk_run_snid(filenames, client=None, as_dask="delayed", map_kwargs={}, **kw
     run_delayed = []
     for i,filename in enumerate(filenames):
         mkwargs = {k:v if not hasattr(v,"__iter__") else v[i] for k,v in kwargs.items()}
-        print(mkwargs)
         run_delayed.append( dask.delayed(run_snid)(filename, **mkwargs))
 
     # ------------ #
@@ -366,7 +365,7 @@ class SNID( object ):
                             rlapmin=2, 
                             fluxout=30,
                             skyclip=False, aband=False, inter=False, plot=False,
-                            param=None):
+                            param=None, verbose=True):
         """ """
         lbdamin, lbdamax = lbda_range
         agemin, agemax = phase_range
@@ -392,7 +391,8 @@ class SNID( object ):
             
         cmd_snid += f"fluxout={int(fluxout)} aband={int(aband)} rlapmin={int(rlapmin)} inter={int(inter)} plot={int(plot)} "
         cmd_snid += f"{filename}"
-        print(cmd_snid)
+        if verbose:
+            print(cmd_snid)
         return cmd_snid
     
     def run(self, filename, fileout=None,
