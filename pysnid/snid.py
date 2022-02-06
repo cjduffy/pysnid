@@ -146,18 +146,19 @@ class SNIDReader( object ):
         """ """
         return self.results.loc[index]["rlap"]
 
-    def get_bestmatches(self, sortby="rlap"):
-        """ """
+    def get_bestmatches(self, sortby="rlap", grade="good", **kwargs):
+        """ grade="good" and **kwargs goes to get_result() """
         # The reset index is to have the no. columns in the returned
         # dataframe.
-        results = self.results.sort_values(sortby, ascending=False).reset_index()
+        results = self.get_results(grade=grade, **kwargs).sort_values(sortby, ascending=False).reset_index()
         bestmatches = results.groupby("type").first().sort_values("rlap", ascending=False)
         if "cutoff" in bestmatches.index:
             return bestmatches.drop("cutoff")
         return bestmatches
 
-    def get_results(self, types="*", rlap_range=[5,None], 
-                    lap_range=None, age_range=None, z_range=None):
+    def get_results(self, types="*", rlap_range=None, 
+                    lap_range=None, age_range=None, z_range=None,
+                    grade="good"):
         """ get a subset of the result dataframe """
         def _get_in_range_(res_, key, rmin=None, rmax=None):
             """ """
@@ -170,8 +171,10 @@ class SNIDReader( object ):
                     res_ = res_[res_[key].between(rmin, rmax)]
             return res_    
 
-
-        res = self.results.copy()
+        if grade is None:
+            res = self.results.copy()
+        else:
+            res = self.results[self.results["grade"] == grade]
 
         if not (types is None or types in ["*","all"]):
             if "*" in types:
