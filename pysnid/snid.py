@@ -97,12 +97,12 @@ class SNIDReader( object ):
         else:
             warnings.warn(f"no 'results' stored in the input filename {filename}")
         
-        comps = [l for l in filekeys if "comp" in l]
-        if len(comps)>0:
-            this.set_models(pandas.concat({int(comp.split("comp")[-1]): hdata.get( comp ) for comp in comps}))
+        if "/models" in filekeys:
+            this.set_models( hdata.get( "models" ) )
         else:
             warnings.warn(f"not a single 'comp' stored in the input filename {filename}")
-            
+
+        this._filename = filename
         return this
 
 
@@ -127,7 +127,6 @@ class SNIDReader( object ):
         """ """
         self._models = models
     
-    
     # --------- #
     #  GETTER   #
     # --------- #
@@ -142,6 +141,16 @@ class SNIDReader( object ):
     def get_model_rlap(self, index):
         """ """
         return self.results.loc[index]["rlap"]
+
+    def get_bestmatches(self, sortby="rlap"):
+        """ """
+        # The reset index is to have the no. columns in the returned
+        # dataframe.
+        results = self.results.sort_values(sortby, ascending=False).reset_index()
+        bestmatches = results.groupby("type").first().sort_values("rlap", ascending=False)
+        if "cutoff" in bestmatches.index:
+            return bestmatches.drop("cutoff")
+        return bestmatches
 
     def get_results(self, types="*", rlap_range=[5,None], 
                     lap_range=None, age_range=None, z_range=None):
@@ -180,10 +189,53 @@ class SNIDReader( object ):
             res = _get_in_range_(res, "lap", *lap_range)
 
         return res
+
+    def get_inputdata(self, fluxcorr=True):
+        """ For some reason, the 'data' spectra recorded by SNID (and
+        insite self.data) corresponds to input_flux*input_lbda.
+        fluxcorr enables to return the correct flux such that:
+        
+        input_flux = self.get_inputdata(fluxcorr=True)
+        -> here input_flux is actually normalised by its mean.
+        """
+        data = self.data.copy()
+        if not fluxcorr:
+            return data
+
+        flux = data["flux"]/data["wavelength"]
+        flux/=flux.mean()
+        data["flux"] = flux*1.05 # No idea why...
+        return data
+
+    def get_modeldata(self, model_, fluxcorr=True):
+        """ """
+        data = self.models.xs(model_).copy()
+        if not fluxcorr:
+            return data
+
+        flux = data["flux"]/data["wavelength"]
+        flux/=flux.mean()
+        data["flux"] = flux*1.05 # No idea why...
+        return data
+        
     # --------- #
     #  GETTER   #
-    # --------- #    
-    def show(self, models=[1], offset_coef=1, ax=None, savefile=None):
+    # --------- #
+    def show_bestmatches(self, nbest=None, ax=None, savefile=None, **kwargs):
+        """ """
+        best_matches = self.get_bestmatches()
+        if nbest is not None:
+            best_matches = best_matches.iloc[:nbest]
+        # Limit to those with models.
+        best_matches = best_matches[best_matches["no."].astype("int")<self.nmodels]
+        models = np.asarray(best_matches["no."], dtype="int")
+
+        return self.show(models=models, ax=ax, savefile=savefile, **kwargs)
+    
+        
+    def show(self, models=[1], offset_coef=1, ax=None, savefile=None, fluxcorr=True,
+                 lw_data=1.5, color_data="0.7", lw_model=1.5, modelprop={},
+                 **kwargs):
         """ """
         import matplotlib.pyplot as mpl
         if ax is None:
@@ -192,14 +244,18 @@ class SNIDReader( object ):
         else:
             fig = ax.figure
 
-        propmodel = dict(lw=1)
+        propmodel = {**dict(lw=lw_model),**modelprop}
+
+        # - Data
+        data_ = self.get_inputdata(fluxcorr=fluxcorr)
+        
         for i, model_ in enumerate(np.atleast_1d(models)):
             datalabel = "snid-format data" if i==0 else "_no_legend_"
             offset = offset_coef*i
-            ax.plot(self.data["wavelength"], self.data["flux"]-offset, 
-                    label=datalabel, lw=2, color='0.7')
+            ax.plot(data_["wavelength"], data_["flux"]-offset, 
+                    label=datalabel, lw=lw_data, color=color_data, **kwargs)
 
-            d = self.models.xs(model_)
+            d = self.get_modeldata(model_, fluxcorr=fluxcorr)
             mlabel = self.get_model_label(str(model_))
             ax.plot(d["wavelength"], d["flux"]-offset, 
                     label=f"{model_}: {mlabel}", 
@@ -273,6 +329,18 @@ class SNIDReader( object ):
             return None
         return self._results
 
+    @property
+    def filename(self):
+        """ """
+        if not hasattr(self,"_filename"):
+            return None
+        return self._filename
+
+    @property
+    def nmodels(self):
+        """ number of model stored inside self.models """
+        return len(self.models.index.levels[0])
+
 
 class SNID( object ):
     """ """
@@ -291,7 +359,7 @@ class SNID( object ):
                             redshift_range=[-0.01,0.4],
                             medlen=20, fwmed=None,
                             rlapmin=2, 
-                            fluxout=10,
+                            fluxout=30,
                             skyclip=False, aband=False, inter=False, plot=False,
                             param=None):
         """ """
@@ -335,7 +403,7 @@ class SNID( object ):
         phase_range=[-20,30],
         redshift_range=[0,0.2],
         medlen=20, rlapmin=4, 
-        fluxout=5,
+        fluxout=30,
         skyclip=False, aband=False, inter=False, plot=False
         
         """
@@ -390,8 +458,8 @@ class SNID( object ):
                 raise FileNotFoundError("cannot find the SNID output.")
 
             data = SNIDReader._read_snidflux_(datafile)
-            models = {int(f_.split("comp")[-1].split("_")[0]):SNIDReader._read_snidflux_(f_) 
-                      for i,f_ in enumerate(modelfiles)}
+            models = pandas.concat({int(f_.split("comp")[-1].split("_")[0]):SNIDReader._read_snidflux_(f_) 
+                                        for i,f_ in enumerate(modelfiles)})
             
             if fileout is None:
                 if dirout is None:
@@ -403,8 +471,7 @@ class SNID( object ):
                 
             result.to_hdf(fileout, key="results")
             data.to_hdf(fileout, key="data")
-            for i, d_ in models.items():
-                d_.to_hdf(fileout, key=f"comp{i}")
+            models.to_hdf(fileout, key="models")
                 
             if not quiet:
                 print(f"snid run was successfull: data stored at {fileout}")
