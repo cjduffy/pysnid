@@ -146,12 +146,17 @@ class SNIDReader( object ):
         """ """
         return self.results.loc[index]["rlap"]
 
-    def get_bestmatches(self, sortby="rlap", grade="good", **kwargs):
+    def get_bestmatches(self, sortby="rlap", grade="good", rlap_range=[4,None], **kwargs):
         """ grade="good" and **kwargs goes to get_result() """
         # The reset index is to have the no. columns in the returned
         # dataframe.
-        results = self.get_results(grade=grade, **kwargs).sort_values(sortby, ascending=False).reset_index()
-        bestmatches = results.groupby("type").first().sort_values("rlap", ascending=False)
+        results = self.get_results(grade=grade,rlap_range=rlap_range, **kwargs).sort_values(sortby, ascending=False).reset_index()
+        bestmatches = results.groupby("type").first()
+        size_ = results.groupby("type").size()
+        size_.name="nentries"
+        bestmatches = pandas.merge(bestmatches, size_, left_index=True, right_index=True
+                                       ).sort_values("rlap", ascending=False)
+        
         if "cutoff" in bestmatches.index:
             return bestmatches.drop("cutoff")
         return bestmatches
@@ -224,26 +229,152 @@ class SNIDReader( object ):
         flux/=flux.mean()
         data["flux"] = flux*1.05 # No idea why...
         return data
+
+    def get_type(self, min_rlap=5, nfirst=10, grade='good', min_prob=0.5,
+                   full_output=False, 
+                   fallback='unclear', 
+                   **kwargs):
+        """ """
+        results = self.get_results(grade=grade, **{**dict(rlap_range=[min_rlap,None]), **kwargs})
+        if nfirst is not None:
+            results = results.iloc[:nfirst]
+
+        rlap_sums = results.groupby("type")["rlap"].sum().sort_values(ascending=False)
+        rlap_sums /= rlap_sums.sum()
+
+        # - Returns
+        if len(rlap_sums)==0:
+            warnings.warn(f"No 'rlap' greater than {min_rlap} ; '{fallback}'  returned")
+            return (fallback, np.NaN)
+
+        if rlap_sums.iloc[0] < min_prob:
+            warnings.warn(f"No 'probabilities' above the {min_prob:.0%} ; '{fallback}' typing returned")
+            return (fallback, np.NaN)
+
+        return (rlap_sums.index[0],rlap_sums.iloc[0]) if not full_output else rlap_sums    
         
     # --------- #
     #  GETTER   #
     # --------- #
-    def show_bestmatches(self, nbest=None, ax=None, savefile=None, **kwargs):
+    def show(self, axes=None, spider_nfirst=7, spiderkwargs={},
+                 show_typing=True, nbest=4, label=None,
+                 savefile=None,
+                 **kwargs):
         """ """
-        best_matches = self.get_bestmatches()
+        
+        if axes is None:
+            import matplotlib.pyplot as mpl
+            fig = mpl.figure(figsize=[9,3])
+            axs = fig.add_axes([0.1,0.2,0.6,0.65])
+            axt = fig.add_axes([0.75,0.1,0.2,0.75], polar=True)
+        else:
+            axs, axt = axes
+            fig = axs.figure
+            
+        _ = self.show_bestmatches(ax=axs, nbest=nbest, **kwargs)
+        _ = self.show_spider(ax=axt, nfirst=spider_nfirst, **spiderkwargs)
+        if _ is None:
+            axt.text(0.5,0.5, "No Matching", transform=axt.transAxes,
+                         va="center", ha="center")
+        # - Show typing
+        if show_typing:
+            typing = self.get_type()
+            if label is not None:
+                axs.text(-0.05, 1.2, f"{label}",
+                         va="top", ha="left", fontsize="small", weight="normal",
+                         color="k", transform=axs.transAxes)
+                
+            fig.text(-0.05, 1.12, f"auto typing: {typing[0]} ({typing[1]:.0%})",
+                     va="top", ha="left", fontsize="small", weight="bold",
+                     color="k", transform=axs.transAxes)
+            
+        if savefile is not None:
+            fig.savefig(savefile)
+
+        return fig
+    
+    def show_spider(self, ax=None, main="rlap", second="nentries",
+                        logscale="second", nfirst=None,
+                        min_rlap=4, matchprop={},
+                        color_main="C0", falpha_main=0.05, lw_main=1.5,
+                        color_second="C1",falpha_second=0.2, lw_second=1,
+                        color_grid="0.6", **kwargs):
+        """ """
+        import matplotlib.pyplot as mpl
+        from matplotlib.colors import to_rgba
+        from pysnid.tools import make_spiderplot, get_polartwin
+
+        
+        logscale = np.atleast_1d(logscale) if logscale is not None else []
+        best_matches = self.get_bestmatches(**{**dict(rlap_range=[min_rlap,None]), **matchprop})
+        if nfirst is not None:
+            best_matches = best_matches.iloc[:nfirst]
+            
+        nbest_matchs = len(best_matches)
+        if nbest_matchs == 0:
+            warnings.warn("No bestmatch")
+            return None
+        
+        # - Labels
+        labels = np.asarray(best_matches.index, dtype=str)
+        # - Main axis
+        valuemain = np.asarray(best_matches[main], dtype="float")
+        if "main" in logscale:
+            valuemain = np.log10(valuemain)
+        # - Second
+        if second is not None:
+            valuesecond = np.asarray(best_matches[second], dtype="float")
+            if "second" in logscale:
+                valuesecond = np.log10(valuesecond)
+
+        else:
+            valuesecond = None
+
+        fig = make_spiderplot(valuemain, labels=labels, ax=ax,
+                                   gcolor=color_grid,
+                                   rlabel_angle= (360/nbest_matchs)/2,
+                                   facecolor=to_rgba(color_main,falpha_main),
+                                   edgecolor=color_main, lw=lw_main,
+                                   rlabel=main, zorder=2,
+                                   highlight=min_rlap, highlight_color=to_rgba(color_grid,0.5)
+                                  )
+        if ax is None:
+            ax = fig.axes[0]
+
+        if valuesecond is not None:
+            fig = make_spiderplot(valuesecond, rtwin_from=ax, 
+                                  labels=labels, gcolor=color_grid, 
+                                  facecolor=to_rgba(color_second, falpha_second),
+                                  edgecolor=color_second, 
+                                  rlabel_angle=360/nbest_matchs * (0.5+int(nbest_matchs/2)),
+                                  lw=lw_second, #alpha=1,
+                                  rlabel=f"log(n>{min_rlap})" if second=="nentries" else second, 
+                                  rlabel_rotation=0, rlabel_ha="center", zorder=9)
+        return fig
+    
+    def show_bestmatches(self, nbest=None, ax=None, savefile=None, min_rlap=4, matchprop={}, **kwargs):
+        """ """
+        best_matches = self.get_bestmatches(**{**dict(rlap_range=[min_rlap,None]), **matchprop})
         if nbest is not None:
             best_matches = best_matches.iloc[:nbest]
         # Limit to those with models.
         best_matches = best_matches[best_matches["no."].astype("int")<self.nmodels]
         models = np.asarray(best_matches["no."], dtype="int")
-
-        return self.show(models=models, ax=ax, savefile=savefile, **kwargs)
-    
         
-    def show(self, models=[1], offset_coef=1, ax=None, savefile=None, fluxcorr=True,
+        return self.show_models(models=models, ax=ax, savefile=savefile, **kwargs)
+        
+    def show_models(self, models=[1], offset_coef=None, ax=None, savefile=None, fluxcorr=True,
                  lw_data=1.5, color_data="0.7", lw_model=1.5, modelprop={},
                  **kwargs):
-        """ """
+        """
+        offset_coef: [float, 'None' or None]
+            offset applied between spectra.
+            - float: value used
+            - None : go back to default values (90% of data)
+            -'None': No offset ; same as offset_coef=0
+            
+        
+        """
         import matplotlib.pyplot as mpl
         if ax is None:
             fig = mpl.figure(figsize=[7,4])
@@ -255,8 +386,19 @@ class SNIDReader( object ):
 
         # - Data
         data_ = self.get_inputdata(fluxcorr=fluxcorr)
-        
-        for i, model_ in enumerate(np.atleast_1d(models)):
+        if offset_coef is None:
+            offset_coef = np.percentile(data_["flux"], 90)
+        elif offset_coef == "None":
+            offset_coef = 0
+
+
+        models = np.atleast_1d(models)
+        if len(models)==0:
+            ax.plot(data_["wavelength"], data_["flux"], 
+                    lw=lw_data, color=color_data, **kwargs)
+
+                        
+        for i, model_ in enumerate(models):
             datalabel = "snid-format data" if i==0 else "_no_legend_"
             offset = offset_coef*i
             ax.plot(data_["wavelength"], data_["flux"]-offset, 
@@ -264,12 +406,18 @@ class SNIDReader( object ):
 
             d = self.get_modeldata(model_, fluxcorr=fluxcorr)
             mlabel = self.get_model_label(str(model_))
+            modeldata = self.results.loc[str(model_)]
+            if modeldata['grade'] != "good":
+                propmodel["ls"] = ":"
+                
             ax.plot(d["wavelength"], d["flux"]-offset, 
                     label=f"{model_}: {mlabel}", 
                     **propmodel)
 
-            modeldata = self.results.loc[str(model_)]
-            text = f"{modeldata['type']} \n z={modeldata['z']:0.3f} | {modeldata['age']:+0.1f}d \n  rlap: {modeldata['rlap']:0.1f} "
+
+            text = f"{modeldata['type']} \n z={modeldata['z']:0.3f} | {modeldata['age']:+0.1f}d \n  rlap: {modeldata['rlap']:0.1f}"
+            if modeldata['grade'] != "good":
+                text += f" ({modeldata['grade']})"
             ax.text(d["wavelength"][0]-50, d["flux"][0]-offset, text, 
                     va="center", ha="right", color=f"C{i}", 
                     fontsize="x-small", weight="bold")
