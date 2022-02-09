@@ -334,7 +334,7 @@ class SNIDReader( object ):
                                    rlabel_angle= (360/nbest_matchs)/2,
                                    facecolor=to_rgba(color_main,falpha_main),
                                    edgecolor=color_main, lw=lw_main,
-                                   rlabel=main, zorder=2,
+                                   rlabel=main, zorder=8,
                                    highlight=min_rlap, highlight_color=color_grid
                                   )
         if ax is None:
