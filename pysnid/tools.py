@@ -55,7 +55,7 @@ def make_spiderplot( values,
     ax.fill(angles, values, facecolor=facecolor, edgecolor=edgecolor, 
             lw=lw, alpha=alpha, **kwargs)
     
-    if highlight_color is "None":
+    if highlight_color == "None":
         highlight = None
     if highlight is not None:
         angles_ = np.linspace(0,360, 100)*np.pi/180
