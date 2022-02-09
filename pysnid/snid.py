@@ -335,7 +335,7 @@ class SNIDReader( object ):
                                    facecolor=to_rgba(color_main,falpha_main),
                                    edgecolor=color_main, lw=lw_main,
                                    rlabel=main, zorder=2,
-                                   highlight=min_rlap, highlight_color=to_rgba(color_grid,0.5)
+                                   highlight=min_rlap, highlight_color=color_grid
                                   )
         if ax is None:
             ax = fig.axes[0]
