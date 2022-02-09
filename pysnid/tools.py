@@ -30,9 +30,7 @@ def make_spiderplot( values,
     """ """
     import matplotlib.pyplot as mpl
     from matplotlib.colors import to_rgba
-    if gcolor is None:
-        gcolor = to_rgba("0.8",0.1)
-    
+        
     nparams = len(values)
     if labels is None:
         labels = np.arange(nparams)
@@ -57,7 +55,8 @@ def make_spiderplot( values,
     ax.fill(angles, values, facecolor=facecolor, edgecolor=edgecolor, 
             lw=lw, alpha=alpha, **kwargs)
     
-    
+    if highlight_color is "None":
+        highlight = None
     if highlight is not None:
         angles_ = np.linspace(0,360, 100)*np.pi/180
         line_ = 0*angles_ + highlight
@@ -75,7 +74,6 @@ def make_spiderplot( values,
     if title is not None:
         ax.set_title(name)
         
-    ax.grid(True)   
     ceil_top = get_ciel(np.max(values), n=gridn)
     
     if nticks is None:
@@ -87,6 +85,16 @@ def make_spiderplot( values,
         
     ax.set_rlim(0, ceil_top)
     ax.set_rticks(np.linspace(0, ceil_top, nticks)[1:-1])
+
+    if gcolor is "None":
+        ax.grid(False)
+        gcolor = "r" # just to make sure we don't see it.
+    else:
+        ax.grid(True)
+        
+    if gcolor is None:
+        gcolor = to_rgba("0.8",0.1)
+
     ax.tick_params(axis="y", labelsize="small", grid_color=gcolor, 
                    labelcolor=to_rgba(edgecolor, alpha=alpha), zorder=1)
     ax.tick_params(axis="x", labelsize="small", grid_color="k",

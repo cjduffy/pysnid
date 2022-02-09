@@ -342,7 +342,7 @@ class SNIDReader( object ):
 
         if valuesecond is not None:
             fig = make_spiderplot(valuesecond, rtwin_from=ax, 
-                                  labels=labels, gcolor=color_grid, 
+                                  labels=labels, gcolor="None", 
                                   facecolor=to_rgba(color_second, falpha_second),
                                   edgecolor=color_second, 
                                   rlabel_angle=360/nbest_matchs * (0.5+int(nbest_matchs/2)),
