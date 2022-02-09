@@ -55,7 +55,7 @@ def make_spiderplot( values,
         fig = ax.figure
         
     ax.fill(angles, values, facecolor=facecolor, edgecolor=edgecolor, 
-            lw=lw, alpha=alpha, zorder=5, **kwargs)
+            lw=lw, alpha=alpha, **kwargs)
     
     
     if highlight is not None:
