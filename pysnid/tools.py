@@ -86,7 +86,7 @@ def make_spiderplot( values,
     ax.set_rlim(0, ceil_top)
     ax.set_rticks(np.linspace(0, ceil_top, nticks)[1:-1])
 
-    if gcolor is "None":
+    if gcolor == "None":
         ax.grid(False)
         gcolor = "r" # just to make sure we don't see it.
     else:

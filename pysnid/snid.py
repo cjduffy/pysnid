@@ -626,9 +626,9 @@ class SNID( object ):
             elif not fileout.endswith("h5"):
                 fileout+=".h5"
                 
-            result.to_hdf(fileout, key="results")
-            data.to_hdf(fileout, key="data")
-            models.to_hdf(fileout, key="models")
+            result.to_hdf(fileout, key="results", format='table')
+            data.to_hdf(fileout, key="data", format='table')
+            models.to_hdf(fileout, key="models", format='table')
                 
             if not quiet:
                 print(f"snid run was successfull: data stored at {fileout}")
