@@ -82,29 +82,31 @@ class SNIDReader( object ):
             self.set_models(models)
 
     @classmethod
-    def from_filename(cls, filename):
+    def from_filename(cls, filename, load_data=True, load_models=True, load_results=True):
         """ """
         this = cls()
         hdata = pandas.HDFStore(filename)
         filekeys = hdata.keys()
-        if "/data" in filekeys:
-            this.set_data( hdata.get("data") )
-        else:
-            warnings.warn(f"no 'data' stored in the input filename {filename}")
-        if "/results" in filekeys:
-            this.set_results( hdata.get("results") )
-        else:
-            warnings.warn(f"no 'results' stored in the input filename {filename}")
-        
-        if "/models" in filekeys:
-            this.set_models( hdata.get( "models" ) )
-        else:
-            comps = [l for l in filekeys if "comp" in l]
-            if len(comps)>0:
-                warnings.warn("Important: Deprecation - the old '_snid.h5' format with individual 'comp file' stored will not be supported at the next upgrade. Rebuild your file.")
-                this.set_models(pandas.concat({int(comp.split("comp")[-1]): hdata.get( comp ) for comp in comps}))
+        if load_data:
+            if "/data" in filekeys:
+                this.set_data( hdata.get("data") )
             else:
-                warnings.warn(f"not a single 'comp' stored in the input filename {filename}")
+                warnings.warn(f"no 'data' stored in the input filename {filename}")
+        if load_results:
+            if "/results" in filekeys:
+                this.set_results( hdata.get("results") )
+            else:
+                warnings.warn(f"no 'results' stored in the input filename {filename}")
+        if load_models:
+            if "/models" in filekeys:
+                this.set_models( hdata.get( "models" ) )
+            else:
+                comps = [l for l in filekeys if "comp" in l]
+                if len(comps)>0:
+                    warnings.warn("Important: Deprecation - the old '_snid.h5' format with individual 'comp file' stored will not be supported at the next upgrade. Rebuild your file.")
+                    this.set_models(pandas.concat({int(comp.split("comp")[-1]): hdata.get( comp ) for comp in comps}))
+                else:
+                    warnings.warn(f"not a single 'comp' stored in the input filename {filename}")
 
         this._filename = filename
         return this
