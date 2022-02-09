@@ -611,8 +611,8 @@ class SNID( object ):
                 print(self._result.stdout)
                 print("".center(40,"-"))
                 if cleanout: self._cleanup_run_(tmpdir, old_pwd=old_pwd)
-                raise FileNotFoundError("cannot find the SNID output.")
-
+                return None
+                
             data = SNIDReader._read_snidflux_(datafile)
             models = pandas.concat({int(f_.split("comp")[-1].split("_")[0]):SNIDReader._read_snidflux_(f_) 
                                         for i,f_ in enumerate(modelfiles)})
