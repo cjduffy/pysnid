@@ -304,7 +304,6 @@ class SNIDReader( object ):
         from matplotlib.colors import to_rgba
         from pysnid.tools import make_spiderplot, get_polartwin
 
-        
         logscale = np.atleast_1d(logscale) if logscale is not None else []
         best_matches = self.get_bestmatches(**{**dict(rlap_range=[min_rlap,None]), **matchprop})
         if nfirst is not None:

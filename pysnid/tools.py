@@ -52,7 +52,6 @@ def make_spiderplot( values,
     else:
         fig = ax.figure
         
-        
     ax.fill(angles, values, facecolor=facecolor, edgecolor=edgecolor, 
             lw=lw, alpha=alpha, **kwargs)
     
@@ -74,7 +73,7 @@ def make_spiderplot( values,
     if title is not None:
         ax.set_title(name)
         
-    ax.grid(alpha=0.2)   
+    ax.grid(True)   
     ceil_top = get_ciel(np.max(values), n=gridn)
     
     if nticks is None:
