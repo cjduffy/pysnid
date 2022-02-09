@@ -55,7 +55,7 @@ def make_spiderplot( values,
         fig = ax.figure
         
     ax.fill(angles, values, facecolor=facecolor, edgecolor=edgecolor, 
-            lw=lw, alpha=alpha, **kwargs)
+            lw=lw, alpha=alpha, zorder=5, **kwargs)
     
     
     if highlight is not None:
@@ -88,8 +88,9 @@ def make_spiderplot( values,
     ax.set_rlim(0, ceil_top)
     ax.set_rticks(np.linspace(0, ceil_top, nticks)[1:-1])
     ax.tick_params(axis="y", labelsize="small", grid_color=gcolor, 
-                   labelcolor=to_rgba(edgecolor, alpha=alpha))
-    ax.tick_params(axis="x", labelsize="small", grid_color="k", labelcolor="0.5")
+                   labelcolor=to_rgba(edgecolor, alpha=alpha, zorder=1))
+    ax.tick_params(axis="x", labelsize="small", grid_color="k",
+    labelcolor="0.5", zorder=2)
     if rlabel_angle is not None:
         ax.set_rlabel_position(rlabel_angle)  # Move radial labels away from plotted line
     
