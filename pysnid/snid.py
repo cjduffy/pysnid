@@ -298,7 +298,7 @@ class SNIDReader( object ):
                         min_rlap=4, matchprop={},
                         color_main="C0", falpha_main=0.05, lw_main=1.5,
                         color_second="C1",falpha_second=0.2, lw_second=1,
-                        color_grid="0.6", **kwargs):
+                        color_grid=None, **kwargs):
         """ """
         import matplotlib.pyplot as mpl
         from matplotlib.colors import to_rgba
@@ -320,7 +320,7 @@ class SNIDReader( object ):
         valuemain = np.asarray(best_matches[main], dtype="float")
         if "main" in logscale:
             valuemain = np.log10(valuemain)
-        # - Second
+        # - Secondx
         if second is not None:
             valuesecond = np.asarray(best_matches[second], dtype="float")
             if "second" in logscale:

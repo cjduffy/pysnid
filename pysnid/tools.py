@@ -20,7 +20,7 @@ def get_polartwin(ax):
     return ax2
     
 def make_spiderplot( values, 
-                      ax=None, rtwin_from=None, labels=None, title=None, gcolor="0.8", 
+                      ax=None, rtwin_from=None, labels=None, title=None, gcolor=None, 
                       facecolor="None", edgecolor="C0", 
                       rlabel_angle=None, lw=2, alpha=None, rlabel=None, 
                       highlight=None, highlight_color="k", highlight_lw=1,
@@ -30,6 +30,8 @@ def make_spiderplot( values,
     """ """
     import matplotlib.pyplot as mpl
     from matplotlib.colors import to_rgba
+    if gcolor is None:
+        gcolor = to_rgba("0.8",0.1)
     
     nparams = len(values)
     if labels is None:
