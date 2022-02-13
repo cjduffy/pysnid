@@ -233,27 +233,67 @@ class SNIDReader( object ):
         return data
 
     def get_type(self, min_rlap=5, nfirst=10, grade='good', min_prob=0.5,
-                   full_output=False, 
-                   fallback='unclear', 
+                 full_output=False, fallback='unclear', min_probsub=None, 
+                 incl_subtype=True,
                    **kwargs):
-        """ """
+        """ 
+        min_probsub -> min_prob is None
+
+        If incl_subtype, the subtyping is the subtyping given the best_typing. 
+        So it reads as: p(subtype | besttype)
+
+        Returns
+        -------
+        (string, float), [(string, float) if uncl_subtype]
+
+        in details: (typename, p(type)), (subtype, p(subtype | type))
+
+        """
         results = self.get_results(grade=grade, **{**dict(rlap_range=[min_rlap,None]), **kwargs})
         if nfirst is not None:
             results = results.iloc[:nfirst]
 
-        rlap_sums = results.groupby("type")["rlap"].sum().sort_values(ascending=False)
-        rlap_sums /= rlap_sums.sum()
+        results[["typing","subtyping"]] = results["type"].str.split("-",expand=True).fillna("None")
 
-        # - Returns
+        rlap_sums = results.groupby(["typing","subtyping"])["rlap"].sum()
+        rlap_sums /= rlap_sums.sum()
+        rlap_sums = rlap_sums.sort_values(ascending=False)
+
+        if full_output:
+            return rlap_sums
+
         if len(rlap_sums)==0:
             warnings.warn(f"No 'rlap' greater than {min_rlap} ; '{fallback}'  returned")
-            return (fallback, np.NaN)
+            best_type, best_typefrac = (fallback, np.NaN)
+        else:
+            typing_frac = rlap_sums.sum(level=0) # already a frac
+            if typing_frac.iloc[0] < min_prob: # because stored by ascending=False
+                warnings.warn(f"No 'probabilities' above the {min_prob:.0%} ; '{fallback}' typing returned")
+                best_type, best_typefrac = (fallback, np.NaN)
+            else:
+                best_typing = typing_frac.iloc[0] # because stored by ascending=False
+                best_type, best_typefrac = typing_frac.index[0],typing_frac.iloc[0]
 
-        if rlap_sums.iloc[0] < min_prob:
-            warnings.warn(f"No 'probabilities' above the {min_prob:.0%} ; '{fallback}' typing returned")
-            return (fallback, np.NaN)
+        if not incl_subtype:
+            return (best_type, best_typefrac)
 
-        return (rlap_sums.index[0],rlap_sums.iloc[0]) if not full_output else rlap_sums    
+        if best_type == fallback:
+            return (best_type, best_typefrac), (fallback, np.NaN)
+
+        # Subtyping:
+        if min_probsub is None:
+            min_probsub = min_prob 
+
+    #    return (best_type, best_typefrac), rlap_sums
+        subtypes = rlap_sums.xs(best_type)
+        subtype_frac = (subtypes/subtypes.sum()).sort_values(ascending=False)
+
+        if subtype_frac.iloc[0]<min_prob:
+            return (best_type, best_typefrac), (fallback, np.NaN)
+        return (best_type, best_typefrac), (subtype_frac.index[0],subtype_frac.iloc[0])
+
+
+  
         
     # --------- #
     #  GETTER   #
