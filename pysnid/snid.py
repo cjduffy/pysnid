@@ -326,7 +326,7 @@ class SNIDReader( object ):
                          va="top", ha="left", fontsize="small", weight="normal",
                          color="k", transform=axs.transAxes)
                 
-            fig.text(-0.05, 1.12, f"auto typing: p({typing[0]})={typing[1]:.0%} | p({subtyping[0]}|typing[0])={subtyping[1]:.0%}",
+            fig.text(-0.05, 1.12, f"auto typing: p({typing[0]})={typing[1]:.0%} | p({subtyping[0]}|{typing[0]})={subtyping[1]:.0%}",
                      va="top", ha="left", fontsize="small", weight="bold",
                      color="k", transform=axs.transAxes)
             
