@@ -334,8 +334,8 @@ class SNIDReader( object ):
         if show_telluric:
             main_telluric = [7450,7750]
             small_telluric = [6850,7050]
-            ax.axvspan( *main_telluric, color=telluric_color, alpha=0.1)
-            ax.axvspan( *small_telluric, color=telluric_color, alpha=0.05)
+            axs.axvspan( *main_telluric, color=telluric_color, alpha=0.1)
+            axs.axvspan( *small_telluric, color=telluric_color, alpha=0.05)
             
         if savefile is not None:
             fig.savefig(savefile)
