@@ -124,10 +124,10 @@ class SNIDReader( object ):
     def set_results(self, results):
         """ """
         results = results.copy()
-        results["type"] = results["type"].str.replace("II","II-", regex=False
+        types = results["type"].str.replace("II","II-", regex=False
                                         ).str.replace("--","-", regex=False
                                         ).str.replace("M-star","star-M", regex=False)
-        results[["typing","subtyping"]] = results["type"].str.split("-",expand=True).fillna("None")
+        results[["typing","subtyping"]] = types.str.split("-",expand=True).fillna("None")
         self._results = results
         
     def set_data(self, data):
