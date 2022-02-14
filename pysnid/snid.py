@@ -578,7 +578,7 @@ class SNID( object ):
             cmd_snid += f"forcez={forcez} "
         cmd_snid += f"zmin={zmin} zmax={zmax} "
         # Phase
-        cmd_snid += f"agemin={agemin} agemax={agemax} "
+        cmd_snid += f"agemin={agemin:.0f} agemax={agemax:.0f} "
         # Input Spectral Structure
         cmd_snid += f"skyclip={int(skyclip)} " 
         if medlen is not None:
