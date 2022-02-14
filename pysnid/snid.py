@@ -322,7 +322,7 @@ class SNIDReader( object ):
         if show_typing:
             typing, subtyping = self.get_type(incl_subtype=True)
             if label is not None:
-                axs.text(-0.05, 1.2, f"{label}",
+                axs.text(-0.05, 1.22, f"{label}",
                          va="top", ha="left", fontsize="small", weight="normal",
                          color="k", transform=axs.transAxes)
                 
