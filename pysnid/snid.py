@@ -434,7 +434,7 @@ class SNIDReader( object ):
         # - Data
         data_ = self.get_inputdata(fluxcorr=fluxcorr)
         if offset_coef is None:
-            offset_coef = np.percentile(data_["flux"], 80)
+            offset_coef = 0#np.percentile(data_["flux"], )
         elif offset_coef == "None":
             offset_coef = 0
 
