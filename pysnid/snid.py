@@ -123,6 +123,11 @@ class SNIDReader( object ):
     # ============== #
     def set_results(self, results):
         """ """
+        results = results.copy()
+        results["type"] = results["type"].str.replace("II","II-", regex=False
+                                        ).str.replace("--","-", regex=False
+                                        ).str.replace("M-star","star-M", regex=False)
+        results[["typing","subtyping"]] = results["type"].str.split("-",expand=True).fillna("None")
         self._results = results
         
     def set_data(self, data):
@@ -253,8 +258,6 @@ class SNIDReader( object ):
         if nfirst is not None:
             results = results.iloc[:nfirst]
 
-        results[["typing","subtyping"]] = results["type"].str.split("-",expand=True).fillna("None")
-
         rlap_sums = results.groupby(["typing","subtyping"])["rlap"].sum()
         rlap_sums /= rlap_sums.sum()
         rlap_sums = rlap_sums.sort_values(ascending=False)
@@ -292,9 +295,6 @@ class SNIDReader( object ):
             return (best_type, best_typefrac), (fallback, np.NaN)
         return (best_type, best_typefrac), (subtype_frac.index[0],subtype_frac.iloc[0])
 
-
-  
-        
     # --------- #
     #  GETTER   #
     # --------- #
