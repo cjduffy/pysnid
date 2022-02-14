@@ -301,6 +301,7 @@ class SNIDReader( object ):
     def show(self, axes=None, spider_nfirst=7, spiderkwargs={},
                  show_typing=True, nbest=4, label=None,
                  savefile=None,
+                 show_telluric=True, telluric_color="0.6",
                  **kwargs):
         """ """
         
@@ -329,6 +330,12 @@ class SNIDReader( object ):
             fig.text(-0.05, 1.12, f"auto typing: p({typing[0]})={typing[1]:.0%} | p({subtyping[0]}|{typing[0]})={subtyping[1]:.0%}",
                      va="top", ha="left", fontsize="small", weight="bold",
                      color="k", transform=axs.transAxes)
+
+        if show_telluric:
+            main_telluric = [7450,7750]
+            small_telluric = [6850,7050]
+            ax.axvspan( *main_telluric, color=telluric_color, alpha=0.1)
+            ax.axvspan( *small_telluric, color=telluric_color, alpha=0.05)
             
         if savefile is not None:
             fig.savefig(savefile)
@@ -367,18 +374,16 @@ class SNIDReader( object ):
             valuesecond = np.asarray(best_matches[second], dtype="float")
             if "second" in logscale:
                 valuesecond = np.log10(valuesecond)
-
         else:
             valuesecond = None
 
         fig = make_spiderplot(valuemain, labels=labels, ax=ax,
-                                   gcolor=color_grid,
-                                   rlabel_angle= (360/nbest_matchs)/2,
-                                   facecolor=to_rgba(color_main,falpha_main),
-                                   edgecolor=color_main, lw=lw_main,
-                                   rlabel=main, zorder=8,
-                                   highlight=min_rlap, highlight_color=color_grid
-                                  )
+                              gcolor=color_grid,
+                              rlabel_angle= (360/nbest_matchs)/2,
+                              facecolor=to_rgba(color_main,falpha_main),
+                              edgecolor=color_main, lw=lw_main,
+                              rlabel=main, zorder=8,
+                              highlight=min_rlap, highlight_color=color_grid)
         if ax is None:
             ax = fig.axes[0]
 
@@ -391,6 +396,7 @@ class SNIDReader( object ):
                                   lw=lw_second, #alpha=1,
                                   rlabel=f"log(n>{min_rlap})" if second=="nentries" else second, 
                                   rlabel_rotation=0, rlabel_ha="center", zorder=9)
+
         return fig
     
     def show_bestmatches(self, nbest=None, ax=None, savefile=None, min_rlap=4, matchprop={}, **kwargs):
