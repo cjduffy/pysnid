@@ -462,7 +462,7 @@ class SNIDReader( object ):
                     **propmodel)
 
 
-            text = f"{modeldata['type']} \n z={modeldata['z']:0.3f} | {modeldata['age']:+0.1f}d \n  rlap: {modeldata['rlap']:0.1f}"
+            text = f"{modeldata['sn']}: {modeldata['type']} \n z={modeldata['z']:0.3f} | {modeldata['age']:+0.1f}d \n  rlap: {modeldata['rlap']:0.1f}"
             if modeldata['grade'] != "good":
                 text += f" ({modeldata['grade']})"
             ax.text(d["wavelength"][0]-50, d["flux"][0]-offset, text, 
