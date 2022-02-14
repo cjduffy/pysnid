@@ -434,7 +434,7 @@ class SNIDReader( object ):
         # - Data
         data_ = self.get_inputdata(fluxcorr=fluxcorr)
         if offset_coef is None:
-            offset_coef = np.percentile(data_["flux"], 90)
+            offset_coef = np.percentile(data_["flux"], 80)
         elif offset_coef == "None":
             offset_coef = 0
 
@@ -443,7 +443,6 @@ class SNIDReader( object ):
         if len(models)==0:
             ax.plot(data_["wavelength"], data_["flux"], 
                     lw=lw_data, color=color_data, **kwargs)
-
                         
         for i, model_ in enumerate(models):
             datalabel = "snid-format data" if i==0 else "_no_legend_"
