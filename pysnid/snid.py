@@ -109,6 +109,7 @@ class SNIDReader( object ):
                     warnings.warn(f"not a single 'comp' stored in the input filename {filename}")
 
         this._filename = filename
+        hdata.close()
         return this
 
 
@@ -298,39 +299,51 @@ class SNIDReader( object ):
     # --------- #
     #  GETTER   #
     # --------- #
-    def show(self, axes=None, spider_nfirst=7, spiderkwargs={},
-                 show_typing=True, nbest=4, label=None,
+    def show(self, axes=None, fig=None,
+                 nbest=4,min_rlap=5,nfirst_resummary=30,
+                 show_typing=True, label=None,
+                 sumprop={},
+                 redshift=None, zlabel=None, phase=None, dphase=None,
                  savefile=None,
-                 show_telluric=True, telluric_color="0.6",
+                 show_telluric=True, show_ha=True, telluric_color="0.6",
                  **kwargs):
         """ """
         
         if axes is None:
-            import matplotlib.pyplot as mpl
-            fig = mpl.figure(figsize=[9,3])
-            axs = fig.add_axes([0.1,0.2,0.6,0.65])
-            axt = fig.add_axes([0.75,0.1,0.2,0.75], polar=True)
+            if fig is None:
+                import matplotlib.pyplot as mpl
+                fig = mpl.figure(figsize=[9,3])
+                
+            axs = fig.add_axes([0.1,0.18,0.55,0.7])
+            #axt = fig.add_axes([0.75,0.1,0.2,0.75], polar=True)
+            
+            axsum= [fig.add_axes([0.75,0.85, 0.2,0.03]),
+                    fig.add_axes([0.75,0.18, 0.2,0.55])]
+
         else:
-            axs, axt = axes
+            axs, axsum = axes
             fig = axs.figure
             
-        _ = self.show_bestmatches(ax=axs, nbest=nbest, **kwargs)
-        _ = self.show_spider(ax=axt, nfirst=spider_nfirst, **spiderkwargs)
-        if _ is None:
-            axt.text(0.5,0.5, "No Matching", transform=axt.transAxes,
-                         va="center", ha="center")
+        _ = self.show_bestmatches(ax=axs, nbest=nbest, min_rlap=min_rlap, **kwargs)
+        _ = self.show_ressummary(axes=axsum, nfirst=nfirst_resummary, min_rlap=min_rlap,
+                                 redshift=redshift, zlabel=zlabel, phase=phase, dphase=dphase,
+                                 **sumprop)
+        
         # - Show typing
         if show_typing:
             typing, subtyping = self.get_type(incl_subtype=True)
             if label is not None:
-                axs.text(-0.05, 1.22, f"{label}",
-                         va="top", ha="left", fontsize="small", weight="normal",
-                         color="k", transform=axs.transAxes)
+                axs.text(-0.05, 1.1, f"{label}",
+                         va="bottom", ha="left", fontsize="small", weight="normal",
+                         color="0.6", transform=axs.transAxes)
                 
-            fig.text(-0.05, 1.12, f"auto typing: p({typing[0]})={typing[1]:.0%} | p({subtyping[0]}|{typing[0]})={subtyping[1]:.0%}",
-                     va="top", ha="left", fontsize="small", weight="bold",
+            fig.text(-0.05, 1.01, f"auto typing: p({typing[0]})={typing[1]:.0%} | p({subtyping[0]}|{typing[0]})={subtyping[1]:.0%}",
+                     va="bottom", ha="left", fontsize="small", weight="normal",
                      color="k", transform=axs.transAxes)
 
+        if show_ha and redshift is not None:
+            axs.axvline(6563*(1+redshift),  ls="--",  color=telluric_color, zorder=1, lw=0.5, alpha=0.8)
+            
         if show_telluric:
             main_telluric = [7450,7750]
             small_telluric = [6850,7050]
@@ -344,7 +357,7 @@ class SNIDReader( object ):
     
     def show_spider(self, ax=None, main="rlap", second="nentries",
                         logscale="second", nfirst=None,
-                        min_rlap=4, matchprop={},
+                        min_rlap=5, matchprop={},
                         color_main="C0", falpha_main=0.05, lw_main=1.5,
                         color_second="C1",falpha_second=0.2, lw_second=1,
                         color_grid=None, **kwargs):
@@ -398,8 +411,97 @@ class SNIDReader( object ):
                                   rlabel_rotation=0, rlabel_ha="center", zorder=9)
 
         return fig
+
+
+    def show_ressummary(self, axes=None, nfirst=30,
+                        phase=None, dphase=None, 
+                        redshift=None, zlabel=None,
+                        min_rlap=5,
+                        line_color="0.6", resprop={}):
+        """ """
+        from matplotlib.colors import to_rgba
+        if axes is None:
+            import matplotlib.pyplot as mpl
+            fig = mpl.figure(figsize=[4,4])
+            ax  = fig.add_axes([0.175,0.85, 0.725,0.03])
+            axr = fig.add_axes([0.175,0.20, 0.725,0.55])
+        else:
+            ax, axr = axes
+            fig = ax.figure
+            
+        res = self.get_results(rlap_range=[min_rlap,None], **resprop).iloc[:nfirst]
+        #
+        # - Rankind
+        #
+        types_values = res.reset_index().groupby("type")["no."].apply(list).sort_values()
+        # Loop over groups
+        for i_,(name, nos) in enumerate(types_values.iteritems()):
+            color = f"C{i_}"
+            for j_, v_ in enumerate(np.asarray(nos, dtype="int")):
+                if j_==0:
+                    label= f"{name}: #{v_}"  
+                else:
+                    label= "_no_legend_"
+
+                ax.axvspan(v_-1,v_, facecolor=color, edgecolor="0.7", lw=0.5, label=label)
+                if j_==0:
+                    ax.text(v_-0.5, -0.8, f"{res.loc[str(v_)]['rlap']:.1f}", 
+                           color=color, va="top", ha="center", fontsize="x-small")
+        # - ranking legend
+        ax.legend(loc=[0,1.2], 
+                  ncol=np.min([2,len(types_values)]), fontsize="x-small", frameon=False,
+                 columnspacing=2, handlelength=1) 
+
+        _ = ax.set_xlim(0,nfirst)#len(res))
+        _ = ax.set_yticks([])
+        _ = ax.set_xticks([])
+        # - Ranking texts
+        ax.text(-0.08,   0.3, "rank", va="center", ha="right",
+                    fontsize="x-small", color="0.6",
+                    transform=ax.transAxes)
+        ax.text(-0.08, -1.3,  "rlap", va="center", ha="right",
+                    fontsize="x-small", color="0.6",
+                    transform=ax.transAxes)
+
+        if len(res)<nfirst-1:
+            ax.text(len(res), 0.3, f"#{len(res)}", 
+                    va="center", ha="left", fontsize="xx-small", color="0.3")
+        ax.text(1.01, 0.3, f"#{nfirst}", va="center", ha="left", fontsize="x-small", color="0.3", 
+               transform=ax.transAxes)
+
+        #
+        # - Scatter
+        #
+
+        for i_,(name, nos) in enumerate(types_values.iteritems()):
+            typeres = res.loc[nos]
+            axr.scatter(typeres["age"], typeres["z"],
+                            facecolors=to_rgba(f"C{i_}", 0.9),
+                            edgecolors="0.7", lw=0.5)
+
+        if phase is not None:
+            if dphase is not None:
+                axr.axvspan(phase-2*dphase, phase+2*dphase, color=to_rgba(line_color,0.1))
+                axr.axvspan(phase-3*dphase, phase+3*dphase, color=to_rgba(line_color,0.1))
+            else:
+                axr.axvline(phase, color=line_color, lw=1)
+
+        if redshift is not None:
+            fig.canvas.draw()
+            minx_axr = axr.transData.inverted().transform(axr.transAxes.transform([0,-1]))[0]
+
+            propz = dict(color=line_color, lw=1, ls="-")
+            axr.axhline(redshift, **propz)
+            if zlabel is not None:
+                propzsource = dict(va="bottom", ha="left", color="0.6", fontsize="x-small")
+                axr.text(minx_axr, redshift, zlabel, **propzsource)
+
+        axr.set_ylabel("Redshift", fontsize="small")
+        axr.set_xlabel("Phase", fontsize="small")
+        axr.tick_params(labelsize="small")
+        return fig
     
-    def show_bestmatches(self, nbest=None, ax=None, savefile=None, min_rlap=4, matchprop={}, **kwargs):
+    def show_bestmatches(self, nbest=None, ax=None, savefile=None, min_rlap=5, matchprop={}, **kwargs):
         """ """
         best_matches = self.get_bestmatches(**{**dict(rlap_range=[min_rlap,None]), **matchprop})
         if nbest is not None:
@@ -422,9 +524,9 @@ class SNIDReader( object ):
             
         
         """
-        import matplotlib.pyplot as mpl
         if ax is None:
-            fig = mpl.figure(figsize=[7,4])
+            from matplotlib.figure import Figure
+            fig = Figure(figsize=[7,4])
             ax = fig.add_axes([0.12,0.15,0.8,0.8])
         else:
             fig = ax.figure
@@ -476,7 +578,8 @@ class SNIDReader( object ):
         clearwhich = ["left","right","top"] # "bottom"
         [ax.spines[which].set_visible(False) for which in clearwhich]
 
-        ax.set_xlabel(r"Wavelength [$\AA$]", fontsize="large")
+        ax.set_xlabel(r"Wavelength [$\AA$]", fontsize="medium")
+        ax.tick_params(labelsize="small")
         if savefile is not None:
             fig.savefig(savefile)
             
@@ -559,7 +662,7 @@ class SNID( object ):
                             phase_range=[-20,50],
                             redshift_range=[-0.01,0.4],
                             medlen=20, fwmed=None,
-                            rlapmin=2, 
+                            min_rlap=2, 
                             fluxout=30,
                             skyclip=False, aband=False, inter=False, plot=False,
                             param=None, verbose=True):
@@ -586,7 +689,7 @@ class SNID( object ):
         if fwmed is not None:
             cmd_snid += f"fwmed={int(fwmed)} " 
             
-        cmd_snid += f"fluxout={int(fluxout)} aband={int(aband)} rlapmin={int(rlapmin)} inter={int(inter)} plot={int(plot)} "
+        cmd_snid += f"fluxout={int(fluxout)} aband={int(aband)} min_rlap={int(min_rlap)} inter={int(inter)} plot={int(plot)} "
         cmd_snid += f"{filename}"
         if verbose:
             print(cmd_snid)
@@ -604,7 +707,7 @@ class SNID( object ):
         lbda_range=[4000,8000], 
         phase_range=[-20,30],
         redshift_range=[0,0.2],
-        medlen=20, rlapmin=4, 
+        medlen=20, min_rlap=4, 
         fluxout=30,
         skyclip=False, aband=False, inter=False, plot=False
         
