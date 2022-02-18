@@ -317,7 +317,7 @@ class SNIDReader( object ):
             axs = fig.add_axes([0.1,0.18,0.55,0.7])
             #axt = fig.add_axes([0.75,0.1,0.2,0.75], polar=True)
             
-            axsum= [fig.add_axes([0.75,0.85, 0.2,0.03]),
+            axsum= [fig.add_axes([0.75,0.82, 0.2,0.03]),
                     fig.add_axes([0.75,0.18, 0.2,0.55])]
 
         else:
