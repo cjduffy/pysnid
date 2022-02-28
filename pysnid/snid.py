@@ -583,7 +583,7 @@ class SNIDReader( object ):
         ax.set_yticks([])
 
         clearwhich = ["left","right","top"] # "bottom"
-        [ax.spines[whsminich].set_visible(False) for which in clearwhich]
+        [ax.spines[which].set_visible(False) for which in clearwhich]
 
         ax.set_xlabel(r"Wavelength [$\AA$]", fontsize="medium")
         ax.tick_params(labelsize="small")
