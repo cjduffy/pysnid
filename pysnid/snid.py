@@ -416,7 +416,7 @@ class SNIDReader( object ):
     def show_ressummary(self, axes=None, nfirst=30,
                         phase=None, dphase=None, 
                         redshift=None, zlabel=None,
-                        min_rlap=5,
+                        min_rlap=5, phase_prior=5,
                         line_color="0.6", resprop={}):
         """ """
         from matplotlib.colors import to_rgba
@@ -477,14 +477,20 @@ class SNIDReader( object ):
             typeres = res.loc[nos]
             axr.scatter(typeres["age"], typeres["z"],
                             facecolors=to_rgba(f"C{i_}", 0.9),
-                            edgecolors="0.7", lw=0.5)
+                            edgecolors="0.7", lw=0.5, zorder=3)
 
         if phase is not None:
             if dphase is not None:
-                axr.axvspan(phase-2*dphase, phase+2*dphase, color=to_rgba(line_color,0.1))
-                axr.axvspan(phase-3*dphase, phase+3*dphase, color=to_rgba(line_color,0.1))
+                axr.axvspan(phase-2*dphase, phase+2*dphase, color=to_rgba(line_color,0.1),
+                                zorder=2)
+                axr.axvspan(phase-3*dphase, phase+3*dphase, color=to_rgba(line_color,0.1),
+                                zorder=2)
             else:
                 axr.axvline(phase, color=line_color, lw=1)
+
+            axr.axvspan(phase-phase_prior,phase+phase_prior, zorder=1,
+                            color=to_rgba("C0",0.02))
+            
 
         if redshift is not None:
             fig.canvas.draw()
@@ -496,6 +502,7 @@ class SNIDReader( object ):
                 propzsource = dict(va="bottom", ha="left", color="0.6", fontsize="x-small")
                 axr.text(minx_axr, redshift, zlabel, **propzsource)
 
+        
         axr.set_ylabel("Redshift", fontsize="small")
         axr.set_xlabel("Phase", fontsize="small")
         axr.tick_params(labelsize="small")
@@ -576,7 +583,7 @@ class SNIDReader( object ):
         ax.set_yticks([])
 
         clearwhich = ["left","right","top"] # "bottom"
-        [ax.spines[which].set_visible(False) for which in clearwhich]
+        [ax.spines[whsminich].set_visible(False) for which in clearwhich]
 
         ax.set_xlabel(r"Wavelength [$\AA$]", fontsize="medium")
         ax.tick_params(labelsize="small")
@@ -662,7 +669,7 @@ class SNID( object ):
                             phase_range=[-20,50],
                             redshift_range=[-0.01,0.4],
                             medlen=20, fwmed=None,
-                            min_rlap=2, 
+                            rlapmin=2, 
                             fluxout=30,
                             skyclip=False, aband=False, inter=False, plot=False,
                             param=None, verbose=True):
@@ -689,7 +696,7 @@ class SNID( object ):
         if fwmed is not None:
             cmd_snid += f"fwmed={int(fwmed)} " 
             
-        cmd_snid += f"fluxout={int(fluxout)} aband={int(aband)} min_rlap={int(min_rlap)} inter={int(inter)} plot={int(plot)} "
+        cmd_snid += f"fluxout={int(fluxout)} aband={int(aband)} rlapmin={int(rlapmin)} inter={int(inter)} plot={int(plot)} "
         cmd_snid += f"{filename}"
         if verbose:
             print(cmd_snid)
@@ -707,7 +714,7 @@ class SNID( object ):
         lbda_range=[4000,8000], 
         phase_range=[-20,30],
         redshift_range=[0,0.2],
-        medlen=20, min_rlap=4, 
+        medlen=20, rlapmin=4, 
         fluxout=30,
         skyclip=False, aband=False, inter=False, plot=False
         
