@@ -270,7 +270,7 @@ class SNIDReader( object ):
             warnings.warn(f"No 'rlap' greater than {min_rlap} ; '{fallback}'  returned")
             best_type, best_typefrac = (fallback, np.NaN)
         else:
-            typing_frac = rlap_sums.sum(level=0) # already a frac
+            typing_frac = rlap_sums.groupby(level=0).sum() # already a frac
             if typing_frac.iloc[0] < min_prob: # because stored by ascending=False
                 warnings.warn(f"No 'probabilities' above the {min_prob:.0%} ; '{fallback}' typing returned")
                 best_type, best_typefrac = (fallback, np.NaN)
@@ -296,6 +296,65 @@ class SNIDReader( object ):
             return (best_type, best_typefrac), (fallback, np.NaN)
         return (best_type, best_typefrac), (subtype_frac.index[0],subtype_frac.iloc[0])
 
+
+    def get_redshift(self, typing="auto", weight_by="rlap",
+                    rlap_range=[5,None], nfirst=30,
+                    dredshift="nmad"):
+        """ 
+
+        Parameters
+        ----------
+        typing: [None, string or list of] -optional-
+            if None or "*" all types will be used.
+            if auto, typing comes from auto-typing (self.get_type())
+            if given (could be a list), only given type is used.
+
+        """
+        DEFAULT = [np.nan, np.nan]
+        bestres = self.get_results(rlap_range=rlap_range)
+        if nfirst is not None:
+            bestres = bestres.iloc[:30]
+
+        # Typing =    
+        if typing in ["*","all", "any"]:
+            typing = None
+            
+        if typing is not None:
+            if typing == "auto":
+                auto_type = self.get_type()
+                typing_, subtype_ = np.transpose(auto_type)[0]
+                if typing_ == "unclear":
+                    typing = None
+                elif subtype_ == "unclear":
+                    typing = bestres[bestres["typing"] == "Ia"]["type"].unique()
+                else:
+                    typing = f"{typing_}-{subtype_}"
+
+                    
+        if typing is not None:
+            bestres = bestres[bestres["type"].isin(np.atleast_1d(typing))]
+
+        # nothing so back to nan
+        if len(bestres) == 0:
+            return DEFAULT
+
+        
+        if weight_by is not None:
+            weights = bestres[weight_by]
+            
+        # Redshift
+        redshift = np.average(bestres["z"], weights=weights)
+
+        # Error on
+        if dredshift == "nmad":
+            from scipy.stats import median_abs_deviation
+            dredshift = median_abs_deviation(bestres["z"])
+        else:
+            dredshift = getattr(np,"dredshift")(bestres["z"])
+            
+        return redshift, dredshift
+
+    
     # --------- #
     #  GETTER   #
     # --------- #
@@ -700,6 +759,7 @@ class SNID( object ):
         cmd_snid += f"{filename}"
         if verbose:
             print(cmd_snid)
+            
         return cmd_snid
     
     def run(self, filename, fileout=None,
@@ -743,7 +803,7 @@ class SNID( object ):
 
         tmpbase = os.path.basename(self._tmpfile).split(".")[0]
         
-        snid_cmd = self.build_snid_command(self._tmpfile, param=paramfile, **kwargs)
+        snid_cmd = self.build_snid_command(self._tmpfile, param=paramfile, verbose=verbose, **kwargs)
         
         self._result = run(snid_cmd.split(), stdout=PIPE, stderr=PIPE, universal_newlines=True)
         if verbose:
