@@ -29,7 +29,11 @@ def run_snid(filename,
 
     # - Running SNID
     snidf = SNID()
-    outfile = snidf.run(filename, **{**snid_prop,**kwargs})
+    options = {**snid_prop,**kwargs}
+    if verbose:
+        print("options used:", options)
+        
+    outfile = snidf.run(filename, **options)
     if outfile is None:
         warnings.warn("SNID fit failed. Nothing returned")
         return None
