@@ -745,6 +745,7 @@ class SNID( object ):
         # Redshift
         if forcez is not None:
             cmd_snid += f"forcez={forcez} "
+            
         cmd_snid += f"zmin={zmin} zmax={zmax} "
         # Phase
         cmd_snid += f"agemin={agemin:.0f} agemax={agemax:.0f} "
@@ -779,13 +780,14 @@ class SNID( object ):
         skyclip=False, aband=False, inter=False, plot=False
         
         """
+        import shutil
         from subprocess import PIPE, run
         from glob import glob
         #
         basename = os.path.basename(filename)
         dirname  = os.path.dirname(filename)        
         #
-        # Create a symlink to bypass the SNID filepath limitation
+        # Create a copy to bypass the SNID filepath limitation
         
         if tmpdir is None:
             tmpdir = f"tmpsnid_{self._snidid}"
@@ -799,7 +801,7 @@ class SNID( object ):
             old_pwd = None
             self._tmpfile = os.path.join(tmpdir, f"snid_{self._snidid}_spectofit.ascii")
             
-        os.symlink(filename, self._tmpfile)
+        shutil.copy(filename, self._tmpfile)
 
         tmpbase = os.path.basename(self._tmpfile).split(".")[0]
         
