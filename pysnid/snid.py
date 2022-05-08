@@ -838,7 +838,9 @@ class SNID( object ):
             if fileout is None:
                 if dirout is None:
                     dirout = dirname
-                fileout = os.path.join(dirout,basename.split(".")[0]+"_snid.h5")
+
+                basename_noext, ext = os.path.splitext(basename)
+                fileout = os.path.join(dirout, basename_noext+"_snid.h5")
                 
             elif not fileout.endswith("h5"):
                 fileout+=".h5"
