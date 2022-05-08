@@ -114,7 +114,7 @@ class SNIDReader( object ):
 
 
     @property
-    def from_run(cls, filename, forcez=None, phase_range=[-20,50], redshift_range=[-0.01,0.4],
+    def from_run(cls, filename, 
                      **kwargs):
         """ """
         raise NotImplementedError("To be implemented")
@@ -724,31 +724,40 @@ class SNID( object ):
     @staticmethod
     def build_snid_command(filename, 
                             forcez=None,
-                            lbda_range=[4000,8000], 
+                            lbda_range=[4000,9000], 
                             phase_range=[-20,50],
-                            redshift_range=[-0.01,0.4],
+                            redshift_range=[-0.05,0.4],
                             medlen=20, fwmed=None,
                             rlapmin=2, 
                             fluxout=30,
                             skyclip=False, aband=False, inter=False, plot=False,
                             param=None, verbose=True):
         """ """
-        lbdamin, lbdamax = lbda_range
-        agemin, agemax = phase_range
-        zmin, zmax = redshift_range
+
+
+
         
         cmd_snid  = f"snid "
         if param is not None:
             cmd_snid += f"param={param} "
+
+        if lbda_range is not None:
+            lbdamin, lbdamax = lbda_range
+            cmd_snid += f"wmin={int(lbdamin)} wmax={int(lbdamax)} "
             
-        cmd_snid += f"wmin={int(lbdamin)} wmax={int(lbdamax)} "
         # Redshift
         if forcez is not None:
             cmd_snid += f"forcez={forcez} "
+
+        if redshift_range is not None:
+            zmin, zmax = redshift_range
+            cmd_snid += f"zmin={zmin} zmax={zmax} "
             
-        cmd_snid += f"zmin={zmin} zmax={zmax} "
         # Phase
-        cmd_snid += f"agemin={agemin:.0f} agemax={agemax:.0f} "
+        if phase_range is not None:
+            agemin, agemax = phase_range
+            cmd_snid += f"agemin={agemin:.0f} agemax={agemax:.0f} "
+            
         # Input Spectral Structure
         cmd_snid += f"skyclip={int(skyclip)} " 
         if medlen is not None:
