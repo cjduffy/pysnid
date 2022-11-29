@@ -70,7 +70,6 @@ def bulk_run_snid(filenames, client=None, as_dask="delayed", map_kwargs={}, **kw
         return client.gather( client.compute(run_delayed) )
     
     raise ValueError(f"as_dask can only delayed, compute and gather: {as_dask} given")
-        
     
 
 
@@ -312,6 +311,7 @@ class SNIDReader( object ):
             if None or "*" all types will be used.
             if auto, typing comes from auto-typing (self.get_type())
             if given (could be a list), only given type is used.
+            if "Ia" all subtypes
 
         """
         DEFAULT = [np.nan, np.nan]
@@ -322,8 +322,11 @@ class SNIDReader( object ):
         # Typing =    
         if typing in ["*","all", "any"]:
             typing = None
+
+        if typing in ["snia", "sn ia", "Ia"]:
+            typing = bestres[bestres["typing"] == "Ia"]["type"].unique()
             
-        if typing is not None:
+        elif typing is not None:
             if typing == "auto":
                 auto_type = self.get_type()
                 typing_, subtype_ = np.transpose(auto_type)[0]
