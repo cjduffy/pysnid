@@ -115,13 +115,12 @@ class SNIDReader( object ):
         hdata.close()
         return this
 
-
     @property
     def from_run(cls, filename, 
                      **kwargs):
         """ """
         raise NotImplementedError("To be implemented")
-            
+
     # ============== #
     #  Method        #
     # ============== #
@@ -172,10 +171,13 @@ class SNIDReader( object ):
             return bestmatches.drop("cutoff")
         return bestmatches
 
-    def get_results(self, types="*", rlap_range=None, 
-                    lap_range=None, age_range=None, z_range=None,
-                    grade="good"):
+    def get_results(self, types="*", typing=None,
+                        rlap_range=None, 
+                        lap_range=None, age_range=None, z_range=None,
+                        grade="good", nfirst=30):
+        
         """ get a subset of the result dataframe """
+        
         def _get_in_range_(res_, key, rmin=None, rmax=None):
             """ """
             if not rmin is None or not rmax is None:
@@ -185,10 +187,12 @@ class SNIDReader( object ):
                     res_ = res_[res_[key]<=rmax]
                 else:
                     res_ = res_[res_[key].between(rmin, rmax)]
+                    
             return res_    
 
+        # Go
         if grade is None:
-            res = self.results.copy()
+            res = self.results
         else:
             res = self.results[self.results["grade"] == grade]
 
@@ -203,14 +207,45 @@ class SNIDReader( object ):
 
         if rlap_range is not None:
             res = _get_in_range_(res, "rlap", *rlap_range)
+            
         if z_range is not None:
             res = _get_in_range_(res, "z", *z_range)
+            
         if age_range is not None:
             res = _get_in_range_(res, "age", *age_range)
 
         if lap_range is not None:
             res = _get_in_range_(res, "lap", *lap_range)
 
+        #
+        # = Typing
+        #
+        if typing in ["*","all", "any"]:
+            typing = None
+
+        if typing in ["snia", "sn ia", "Ia"]:
+            typing = res[res["typing"] == "Ia"]["type"].unique()
+            
+        elif typing is not None:
+            if typing == "auto":
+                auto_type = self.get_type()
+                typing_, subtype_ = np.transpose(auto_type)[0]
+                
+                if typing_ == "unclear":
+                    typing = None    
+                elif subtype_ == "unclear":
+                    typing = bestres[bestres["typing"] == "Ia"]["type"].unique()
+                else:
+                    typing = f"{typing_}-{subtype_}"
+                    
+        # else typing is None            
+        if typing is not None:
+            res = res[res["type"].isin(np.atleast_1d(typing))]
+        # ============ #
+        
+        if nfirst is not None:
+            res = res.iloc[:nfirst]
+            
         return res
 
     def get_inputdata(self, fluxcorr=True):
@@ -299,10 +334,18 @@ class SNIDReader( object ):
             return (best_type, best_typefrac), (fallback, np.NaN)
         return (best_type, best_typefrac), (subtype_frac.index[0],subtype_frac.iloc[0])
 
+    def get_typing_result(self, typing="auto", 
+                         rlap_range=[5,None], nfirst=30):
+        """ """
+        bestres = self.get_results(rlap_range=rlap_range)
+        if nfirst is not None:
+            bestres = bestres.iloc[:30]
 
+        return bestres
+    
     def get_redshift(self, typing="auto", weight_by="rlap",
                     rlap_range=[5,None], nfirst=30,
-                    dredshift="nmad"):
+                    dredshift="nmad", **kwargs):
         """ 
 
         Parameters
@@ -315,31 +358,8 @@ class SNIDReader( object ):
 
         """
         DEFAULT = [np.nan, np.nan]
-        bestres = self.get_results(rlap_range=rlap_range)
-        if nfirst is not None:
-            bestres = bestres.iloc[:30]
-
-        # Typing =    
-        if typing in ["*","all", "any"]:
-            typing = None
-
-        if typing in ["snia", "sn ia", "Ia"]:
-            typing = bestres[bestres["typing"] == "Ia"]["type"].unique()
-            
-        elif typing is not None:
-            if typing == "auto":
-                auto_type = self.get_type()
-                typing_, subtype_ = np.transpose(auto_type)[0]
-                if typing_ == "unclear":
-                    typing = None
-                elif subtype_ == "unclear":
-                    typing = bestres[bestres["typing"] == "Ia"]["type"].unique()
-                else:
-                    typing = f"{typing_}-{subtype_}"
-
-                    
-        if typing is not None:
-            bestres = bestres[bestres["type"].isin(np.atleast_1d(typing))]
+        bestres = self.get_results(typing=typing, nfirst=nfirst,
+                                    rlap_range=rlap_range, **kwargs)
 
         # nothing so back to nan
         if len(bestres) == 0:
