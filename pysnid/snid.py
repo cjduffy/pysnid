@@ -521,7 +521,7 @@ class SNIDReader( object ):
         #
         types_values = res.reset_index().groupby("type")["no."].apply(list).sort_values()
         # Loop over groups
-        for i_,(name, nos) in enumerate(types_values.iteritems()):
+        for i_,(name, nos) in enumerate(types_values.to_frame().items()):
             color = f"C{i_}"
             for j_, v_ in enumerate(np.asarray(nos, dtype="int")):
                 if j_==0:
@@ -534,10 +534,13 @@ class SNIDReader( object ):
                     ax.text(v_-0.5, -0.8, f"{res.loc[str(v_)]['rlap']:.1f}", 
                            color=color, va="top", ha="center", fontsize="x-small")
         # - ranking legend
-        ax.legend(loc=[0,1.2], 
+        try:
+            ax.legend(loc=[0,1.2], 
                   ncol=np.min([2,len(types_values)]), fontsize="x-small", frameon=False,
                  columnspacing=2, handlelength=1) 
-
+        except:
+            warnings.warn("legend failed")
+            
         _ = ax.set_xlim(0,nfirst)#len(res))
         _ = ax.set_yticks([])
         _ = ax.set_xticks([])
@@ -559,7 +562,7 @@ class SNIDReader( object ):
         # - Scatter
         #
 
-        for i_,(name, nos) in enumerate(types_values.iteritems()):
+        for i_,(name, nos) in enumerate(types_values.items()):
             typeres = res.loc[nos]
             axr.scatter(typeres["age"], typeres["z"],
                             facecolors=to_rgba(f"C{i_}", 0.9),

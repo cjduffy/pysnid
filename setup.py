@@ -12,7 +12,7 @@ packages = find_packages()
 print(f"packages to be installed: {packages}")
 
 CODENAME = "pysnid"
-VERSION = '0.4.2'
+VERSION = '0.4.4'
         
 setup(name=CODENAME,
       version=VERSION,
