@@ -521,9 +521,9 @@ class SNIDReader( object ):
         #
         types_values = res.reset_index().groupby("type")["no."].apply(list).sort_values()
         # Loop over groups
-        for i_,(name, nos) in enumerate(types_values.to_frame().items()):
+        for i_, (name, nos) in enumerate(types_values.items()):
             color = f"C{i_}"
-            for j_, v_ in enumerate(np.asarray(nos, dtype="int")):
+            for j_, v_ in enumerate(np.asarray( list(nos), dtype="int")):
                 if j_==0:
                     label= f"{name}: #{v_}"  
                 else:
