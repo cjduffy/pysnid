@@ -11,7 +11,8 @@ import warnings
 def run_snid(filename, 
              phase=None, redshift=None, delta_phase=5, delta_redshift=None,
              lbda_range=[4000,8000], set_it=True,
-             verbose=False, quiet=True, get_results=True, **kwargs):
+             verbose=False, quiet=True, get_results=True,
+             rm_zeros=True, **kwargs):
     """ """
     snid_prop = dict(quiet=quiet, lbda_range=lbda_range, verbose=verbose)
 
@@ -225,6 +226,10 @@ class SNIDReader( object ):
 
         if typing in ["snia", "sn ia", "Ia"]:
             typing = res[res["typing"] == "Ia"]["type"].unique()
+
+        elif typing in ["Ia!norm"]:
+            typing = res[res["typing"] == "Ia" and res["typing"] != "Ia-norm"]["type"].unique()
+            
             
         elif typing is not None:
             if typing == "auto":
@@ -344,8 +349,9 @@ class SNIDReader( object ):
         return bestres
     
     def get_redshift(self, typing="auto", weight_by="rlap",
-                    rlap_range=[5,None], nfirst=30,
-                    dredshift="nmad", **kwargs):
+                        rlap_range=[5, None], nfirst=30,
+                        dredshift="nmad",
+                        default_zerr=np.nan, **kwargs):
         """ 
 
         Parameters
@@ -357,7 +363,7 @@ class SNIDReader( object ):
             if "Ia" all subtypes
 
         """
-        DEFAULT = [np.nan, np.nan]
+        DEFAULT = [np.nan, default_zerr]
         bestres = self.get_results(typing=typing, nfirst=nfirst,
                                     rlap_range=rlap_range, **kwargs)
 
@@ -374,8 +380,11 @@ class SNIDReader( object ):
 
         # Error on
         if dredshift == "nmad":
-            from scipy.stats import median_abs_deviation
-            dredshift = median_abs_deviation(bestres["z"])
+            if len(bestres) < 3:
+                dredshift = default_zerr
+            else:
+                from scipy.stats import median_abs_deviation
+                dredshift = median_abs_deviation(bestres["z"])
         else:
             dredshift = getattr(np,"dredshift")(bestres["z"])
             
