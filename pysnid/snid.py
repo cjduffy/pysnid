@@ -227,9 +227,8 @@ class SNIDReader( object ):
         if typing in ["snia", "sn ia", "Ia"]:
             typing = res[res["typing"] == "Ia"]["type"].unique()
 
-        if typing in ["Ia!norm"]:
-            typing = res[(res["typing"] == "Ia") & (res["typing"] != "Ia-norm")]["type"].unique()
-            
+        elif typing in ["Ia!norm"]:
+            typing = res[(res["typing"] == "Ia") & (res["type"] != "Ia-norm")]["type"].unique()
             
         elif typing is not None:
             if typing == "auto":
@@ -242,7 +241,7 @@ class SNIDReader( object ):
                     typing = bestres[bestres["typing"] == "Ia"]["type"].unique()
                 else:
                     typing = f"{typing_}-{subtype_}"
-                    
+
         # else typing is None            
         if typing is not None:
             res = res[res["type"].isin(np.atleast_1d(typing))]
