@@ -10,6 +10,7 @@ import warnings
 
 def run_snid(filename, 
              phase=None, redshift=None, delta_phase=5, delta_redshift=None,
+             redshift_bounds=[0, None], 
              lbda_range=[4000,8000], set_it=True,
              verbose=False, quiet=True, get_results=True,
              rm_zeros=True, **kwargs):
@@ -25,8 +26,17 @@ def run_snid(filename,
     if redshift is not None:
         snid_prop["forcez"] = redshift
         if delta_redshift is not None:
-            snid_prop["redshift_range"] = [redshift-delta_redshift, redshift+delta_redshift]
+            if redshift_bounds[0] is not None:
+                min_redshift = np.max([redshift-delta_redshift, redshift_bounds[0]])
+            else:
+                min_redshift = redshift-delta_redshift
 
+            if redshift_bounds[1] is not None:
+                max_redshift = np.min([redshift+delta_redshift, redshift_bounds[1]])
+            else:
+                max_redshift = redshift+delta_redshift
+                                          
+            snid_prop["redshift_range"] = [min_redshift, max_redshift]
 
     # - Running SNID
     snidf = SNID()
