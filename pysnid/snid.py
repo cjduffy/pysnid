@@ -37,7 +37,11 @@ def run_snid(filename,
                 max_redshift = redshift+delta_redshift
                                           
             snid_prop["redshift_range"] = [min_redshift, max_redshift]
-
+    else:
+        
+        snid_prop["redshift_range"] = redshift_bounds
+    
+    print(snid_prop)
     # - Running SNID
     snidf = SNID()
     options = {**snid_prop,**kwargs}
@@ -781,7 +785,8 @@ class SNID( object ):
                             skyclip=False, aband=False, inter=False, plot=False,
                             param=None, verbose=True):
         """ """
-
+            
+        print("*** build_snid_command ***")
 
 
         
@@ -861,7 +866,7 @@ class SNID( object ):
         shutil.copy(filename, self._tmpfile)
 
         tmpbase = os.path.basename(self._tmpfile).split(".")[0]
-        
+
         snid_cmd = self.build_snid_command(self._tmpfile, param=paramfile, verbose=verbose, **kwargs)
         
         self._result = run(snid_cmd.split(), stdout=PIPE, stderr=PIPE, universal_newlines=True)
