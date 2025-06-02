@@ -10,6 +10,11 @@ Assuming you already have snid installed [see here](https://people.lam.fr/blondi
 
 Simply `pip install pysnid`
 
+# Templates
+
+This version of pysnid additionally works with the new [Super-SNID](https://github.com/dkjmagill/QUB-SNID-Templates) + the [Gutiérrez](https://arxiv.org/abs/1709.02487) 
+templates. See the [SNID](https://people.lam.fr/blondin.stephane/index.html) webpage for installation instructions.
+
 # Usage
 
 If you want to fit a spectra stored under `filename=YOUR_DIR_PATH/spectra.ascii`
