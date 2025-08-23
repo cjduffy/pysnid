@@ -142,9 +142,39 @@ class SNIDReader( object ):
     def set_results(self, results):
         """ """
         results = results.copy()
-        types = results["type"].str.replace("II","II-", regex=False
-                                        ).str.replace("--","-", regex=False
-                                        ).str.replace("M-star","star-M", regex=False)
+        types = results["type"].str.replace(r"^Ia$","Ia-", regex=True
+                                        ).str.replace(r"^Ib$","Ib-", regex=True
+                                        ).str.replace(r"^IIb$","IIb-", regex=True
+                                        ).str.replace(r"^Ibn$","Ib-n", regex=True
+                                        ).str.replace(r"^Ic$","Ic-", regex=True
+                                        ).str.replace(r"^Icn$","Ic-n", regex=True
+                                        ).str.replace(r"^II$","II-", regex=True
+                                        ).str.replace(r"^IIP$","II-P", regex=True
+                                        ).str.replace(r"^IIn$","II-n", regex=True
+                                        ).str.replace(r"^IIL$","II-L", regex=True
+                                        ).str.replace(r"^IIn-pec$","II-n_pec", regex=True
+                                        ).str.replace(r"^NotSN$","NotSN-", regex=True
+                                        ).str.replace(r"^AGN$","AGN-", regex=True
+                                        ).str.replace(r"^Gal$","Gal-", regex=True
+                                        ).str.replace(r"^QSO$","QSO-", regex=True
+                                        ).str.replace(r"^M-star$","star-M", regex=True
+                                        ).str.replace(r"^C-star$","star-C", regex=True
+                                        ).str.replace(r"^Afterglow$","Afterglow-", regex=True
+                                        ).str.replace(r"^Nova$","Nova-", regex=True
+                                        ).str.replace(r"^CV$","CV-", regex=True
+                                        ).str.replace(r"^SLSN$","SLSN-", regex=True
+                                        ).str.replace(r"^LFBOT$","LFBOT-", regex=True
+                                        ).str.replace(r"^18cow$","18cow-", regex=True
+                                        ).str.replace(r"^20xnd$","20xnd-", regex=True
+                                        ).str.replace(r"^TDE$","TDE-", regex=True
+                                        ).str.replace(r"^KN$","KN-", regex=True
+                                        ).str.replace(r"^17gfo$","17gfo-", regex=True
+                                        ).str.replace(r"^GAP$","GAP-", regex=True
+                                        ).str.replace(r"^LRN$","LRN-", regex=True
+                                        ).str.replace(r"^LBV$","LBV-", regex=True
+                                        ).str.replace(r"^ILRT$","ILRT-", regex=True
+                                        ).str.replace("--","-", regex=True
+                                        )
         results[["typing","subtyping"]] = types.str.split("-",expand=True).fillna("None")
         self._results = results
         
