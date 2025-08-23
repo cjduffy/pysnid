@@ -324,12 +324,12 @@ class SNIDReader( object ):
 
         if len(rlap_sums)==0:
             warnings.warn(f"No 'rlap' greater than {min_rlap} ; '{fallback}'  returned")
-            best_type, best_typefrac = (fallback, np.NaN)
+            best_type, best_typefrac = (fallback, np.nan)
         else:
             typing_frac = rlap_sums.groupby(level=0).sum() # already a frac
             if typing_frac.iloc[0] < min_prob: # because stored by ascending=False
                 warnings.warn(f"No 'probabilities' above the {min_prob:.0%} ; '{fallback}' typing returned")
-                best_type, best_typefrac = (fallback, np.NaN)
+                best_type, best_typefrac = (fallback, np.nan)
             else:
                 best_typing = typing_frac.iloc[0] # because stored by ascending=False
                 best_type, best_typefrac = typing_frac.index[0],typing_frac.iloc[0]
@@ -338,7 +338,7 @@ class SNIDReader( object ):
             return (best_type, best_typefrac)
 
         if best_type == fallback:
-            return (best_type, best_typefrac), (fallback, np.NaN)
+            return (best_type, best_typefrac), (fallback, np.nan)
 
         # Subtyping:
         if min_probsub is None:
@@ -349,7 +349,7 @@ class SNIDReader( object ):
         subtype_frac = (subtypes/subtypes.sum()).sort_values(ascending=False)
 
         if subtype_frac.iloc[0]<min_prob:
-            return (best_type, best_typefrac), (fallback, np.NaN)
+            return (best_type, best_typefrac), (fallback, np.nan)
         return (best_type, best_typefrac), (subtype_frac.index[0],subtype_frac.iloc[0])
 
     def get_typing_result(self, typing="auto", 
