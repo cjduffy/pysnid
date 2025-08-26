@@ -806,7 +806,7 @@ class SNID( object ):
 
     @staticmethod
     def build_snid_command(filename,
-                            tempdir="/home/sniduser/snid-5.0/templates-2.0/"
+                            tempdir="/home/sniduser/snid-5.0/templates-2.0/",
                             forcez=None,
                             lbda_range=[4000,9000],
                             phase_range=[-20,50],
