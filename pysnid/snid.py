@@ -814,6 +814,7 @@ class SNID( object ):
                             medlen=20, fwmed=None,
                             rlapmin=2,
                             fluxout=30,
+                            emwid = 40,
                             skyclip=False, aband=False, inter=False, plot=False,
                             param=None, verbose=True):
         """ """
@@ -826,12 +827,12 @@ class SNID( object ):
         if param is not None:
             cmd_snid += f"param={param} "
 
-        cmd_snid += f"tempdir=/home/sniduser/snid-5.0/templates-2.0/ "
+        cmd_snid += "tempdir=/home/sniduser/snid-5.0/templates-2.0/ "
 
         if lbda_range is not None:
             lbdamin, lbdamax = lbda_range
             cmd_snid += f"wmin={int(lbdamin)} wmax={int(lbdamax)} "
-        
+
         # Redshift
         if forcez is not None:
             cmd_snid += f"forcez={forcez} "
@@ -844,6 +845,8 @@ class SNID( object ):
         if phase_range is not None:
             agemin, agemax = phase_range
             cmd_snid += f"agemin={agemin:.0f} agemax={agemax:.0f} "
+        if emwid is not None:
+            cmd_snid += f"emwid={emwid:.0f} "
 
         # Input Spectral Structure
         cmd_snid += f"skyclip={int(skyclip)} "
