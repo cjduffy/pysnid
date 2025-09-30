@@ -814,7 +814,7 @@ class SNID( object ):
                             medlen=20, fwmed=None,
                             rlapmin=2,
                             fluxout=30,
-                            emclip=None
+                            emclip=None,
                             emwid = 40,
                             usetype = None,
                             avoidtype = None,
