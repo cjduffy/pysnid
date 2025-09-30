@@ -814,6 +814,7 @@ class SNID( object ):
                             medlen=20, fwmed=None,
                             rlapmin=2,
                             fluxout=30,
+                            emclip=None
                             emwid = 40,
                             usetype = None,
                             avoidtype = None,
@@ -855,6 +856,9 @@ class SNID( object ):
 
         if avoidtype is not None:
             cmd_snid += f"avoidtype={','.join(map(str, avoidtype))} "
+
+        if emclip is not None:
+            cmd_snid += f"emclip={emclip} "
 
         # Input Spectral Structure
         cmd_snid += f"skyclip={int(skyclip)} "
