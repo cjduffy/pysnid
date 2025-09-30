@@ -850,6 +850,12 @@ class SNID( object ):
         if emwid is not None:
             cmd_snid += f"emwid={emwid:.0f} "
 
+        if usetype is not None:
+            cmd_snid += f"usetype={','.join(map(str, usetype))} "
+
+        if avoidtype is None:
+            cmd_snid += f"avoidtype={','.join(map(str, avoidtype))} "
+
         # Input Spectral Structure
         cmd_snid += f"skyclip={int(skyclip)} "
         if medlen is not None:
