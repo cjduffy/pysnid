@@ -853,7 +853,7 @@ class SNID( object ):
         if usetype is not None:
             cmd_snid += f"usetype={','.join(map(str, usetype))} "
 
-        if avoidtype is None:
+        if avoidtype is not None:
             cmd_snid += f"avoidtype={','.join(map(str, avoidtype))} "
 
         # Input Spectral Structure
