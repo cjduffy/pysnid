@@ -815,9 +815,9 @@ class SNID( object ):
                             rlapmin=2,
                             fluxout=30,
                             emclip=None,
-                            emwid = 40,
-                            usetype = None,
-                            avoidtype = None,
+                            emwid=40,
+                            usetype=None,
+                            avoidtype=None,
                             skyclip=False, aband=False, inter=False, plot=False,
                             param=None, verbose=True):
         """ """
